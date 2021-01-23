@@ -22,6 +22,7 @@ var resolveProxyHost             = require('./app/steps/resolveProxyHost');
 var resolveProxyReqPath          = require('./app/steps/resolveProxyReqPath');
 var sendProxyRequest             = require('./app/steps/sendProxyRequest');
 var sendUserRes                  = require('./app/steps/sendUserRes');
+var reportTimings                = require('./app/steps/reportTimings');
 
 module.exports = function proxy(host, userOptions) {
   assert(host, 'Host should not be empty');
@@ -29,6 +30,8 @@ module.exports = function proxy(host, userOptions) {
   return function handleProxy(req, res, next) {
     debug('[start proxy] ' + req.path);
     var container = new ScopeContainer(req, res, next, host, userOptions);
+
+    container.user.reqTime = process.hrtime();
 
     filterUserRequest(container)
       .then(buildProxyReq)
@@ -43,6 +46,7 @@ module.exports = function proxy(host, userOptions) {
       .then(decorateUserResHeaders)
       .then(decorateUserRes)
       .then(sendUserRes)
+      .then(reportTimings)
       .catch(function (err) {
         // I sometimes reject without an error to shortcircuit the remaining
         // steps and return control to the host application.

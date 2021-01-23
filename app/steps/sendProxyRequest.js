@@ -38,8 +38,8 @@ function sendProxyRequest(Container) {
 
     // this guy should go elsewhere, down the chain
     if (options.parseReqBody) {
-    // We are parsing the body ourselves so we need to write the body content
-    // and then manually end the request.
+      // We are parsing the body ourselves so we need to write the body content
+      // and then manually end the request.
 
       //if (bodyContent instanceof Object) {
         //throw new Error
@@ -59,16 +59,21 @@ function sendProxyRequest(Container) {
           }
         }
         proxyReq.setHeader('Content-Length', Buffer.byteLength(body));
+        Container.proxy.reqTime = process.hrtime();
         proxyReq.write(body);
+        proxyReq.end();
+      } else {
+        Container.proxy.reqTime = process.hrtime();
+        proxyReq.end();
       }
-      proxyReq.end();
     } else {
-    // Pipe will call end when it has completely read from the request.
+      // Pipe will call end when it has completely read from the request.
+      Container.proxy.reqTime = process.hrtime();
       req.pipe(proxyReq);
     }
 
     req.on('aborted', function() {
-    // reject?
+      // reject?
       proxyReq.abort();
     });
   });
